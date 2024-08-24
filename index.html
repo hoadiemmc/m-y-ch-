@@ -1,38 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Read Google Sheet Data</title>
+    <title>Update Google Sheets</title>
+    <script src="https://apis.google.com/js/api.js"></script>
 </head>
 <body>
-    <h1>Read Google Sheet Data</h1>
-    <button onclick="readSheet()">Read Data</button>
-    <div id="output"></div>
+    <h1>Update Google Sheets</h1>
+    <button id="auth-button">Authorize</button>
+    <button id="update-button" style="display: none;">Update Sheet</button>
+    <div id="status"></div>
 
     <script>
-        // Your Google Sheets API key
-        const apiKey = 'AIzaSyBnJE88L26osSH-KX1xXRrL5VhGTR-2q1Q';
-        // Your Google Sheet ID
-        const sheetId = '11kBQljwc9_x3cEJak1sRB6c_aUWFhlvXVVDnMGtDRwE';
-        // The range you want to read (e.g., "3E101!B6")
-        const range = '3E101!B6';
+        // Thay thế bằng Client ID và API Key của bạn
+        const CLIENT_ID = '537835419971-slhb3gs8si045p3auoipjfq2bmat7jgl.apps.googleusercontent.com';
+        const API_KEY = '';
+        const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
+        const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
+        const SHEET_ID = '11kBQljwc9_x3cEJak1sRB6c_aUWFhlvXVVDnMGtDRwE'; // Thay bằng ID bảng tính của bạn
 
-        function readSheet() {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
-            
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const outputDiv = document.getElementById('output');
-                    if (data.values && data.values.length > 0) {
-                        outputDiv.innerText = 'Value: ' + data.values[0][0];
-                    } else {
-                        outputDiv.innerText = 'No data found.';
-                    }
-                })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
+        let gapiInited = false;
+        let gisInited = false;
+
+        function handleClientLoad() {
+            gapi.load('client:auth2', initClient);
         }
+
+        function initClient() {
+            gapi.client.init({
+                apiKey: API_KEY,
+                clientId: CLIENT_ID,
+                discoveryDocs: DISCOVERY_DOCS,
+                scope: SCOPES
+            }).then(() => {
+                gapiInited = true;
+                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+                updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+                document.getElementById('auth-button').onclick = handleAuthClick;
+                document.getElementById('update-button').onclick = updateSheet;
+            });
+        }
+
+        function updateSigninStatus(isSignedIn) {
+            if (isSignedIn) {
+                document.getElementById('auth-button').style.display = 'none';
+                document.getElementById('update-button').style.display = 'inline';
+            } else {
+                document.getElementById('auth-button').style.display = 'inline';
+                document.getElementById('update-button').style.display = 'none';
+            }
+        }
+
+        function handleAuthClick() {
+            gapi.auth2.getAuthInstance().signIn();
+        }
+
+        function updateSheet() {
+            const range = '3E101!B6';
+            const valueRange = {
+                "range": range,
+                "majorDimension": "ROWS",
+                "values": [["xin chào"]]
+            };
+            const params = {
+                spreadsheetId: SHEET_ID,
+                range: range,
+                valueInputOption: "RAW"
+            };
+            const request = gapi.client.sheets.spreadsheets.values.update(params, valueRange);
+            request.then((response) => {
+                document.getElementById('status').innerText = 'Update Successful!';
+            }, (error) => {
+                document.getElementById('status').innerText = 'Update Failed: ' + error.result.error.message;
+            });
+        }
+
+        handleClientLoad();
     </script>
 </body>
 </html>
