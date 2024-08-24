@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Read Google Sheet Data</title>
+</head>
+<body>
+    <h1>Read Google Sheet Data</h1>
+    <button onclick="readSheet()">Read Data</button>
+    <div id="output"></div>
+
+    <script>
+        // Your Google Sheets API key
+        const apiKey = 'YOUR_API_KEY_HERE';
+        // Your Google Sheet ID
+        const sheetId = '11kBQljwc9_x3cEJak1sRB6c_aUWFhlvXVVDnMGtDRwE';
+        // The range you want to read (e.g., "3E101!B6")
+        const range = '3E101!B6';
+
+        function readSheet() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const outputDiv = document.getElementById('output');
+                    if (data.values && data.values.length > 0) {
+                        outputDiv.innerText = 'Value: ' + data.values[0][0];
+                    } else {
+                        outputDiv.innerText = 'No data found.';
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }
+    </script>
+</body>
+</html>
